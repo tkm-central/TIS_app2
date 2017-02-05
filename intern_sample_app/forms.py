@@ -40,35 +40,37 @@ GRADE_CHOICES = {
 
 
 class ExaminationForm(forms.Form):
+    loan_amnt = forms.DecimalField(
+        label="ご希望の融資額($)",
+        min_value=0,
+        max_value=100000,
+        required=True,
+        widget=forms.NumberInput()
+    )
+    emp_title = forms.CharField(
+        label="職種",
+        max_length=60,
+        required=False,
+        widget=forms.TextInput()
+    )
+    emp_length = forms.ChoiceField(
+        label="勤続年数",
+        choices=EMP_LENGTH_CHOICES,
+        required=True,
+        widget=forms.Select()
+    )
+    annual_inc = forms.DecimalField(
+        label="年収($)",
+        min_value=0,
+        required=True,
+        widget=forms.NumberInput()
+    )
     home_ownership = forms.ChoiceField(
         label="自宅の所有状況",
         choices=HOME_OWNERSHIP_CHOICES,
         required=True,
         widget=forms.Select()
     )
-    int_rate = forms.DecimalField(
-        label="ローン金利(％)",
-        min_value=0,
-        max_value=100,
-        max_digits=4,
-        decimal_places=2,
-        required=True,
-        widget=forms.NumberInput()
-    )
-    grade = forms.ChoiceField(
-        label="グレード",
-        choices=GRADE_CHOICES,
-        required=True,
-        widget=forms.Select()
-    )
-    mort_acc = forms.DecimalField(
-        label="mort_acc",
-        min_value=0,
-        max_value=37,
-        required=True,
-        widget=forms.NumberInput()
-    )
-
 
     def predict_loan_status(self):
         model_id = getattr(settings, "AMAZON_ML_MODEL_ID")
@@ -78,10 +80,11 @@ class ExaminationForm(forms.Form):
             "MLModelId": model_id,
             "PredictEndpoint": amazon_ml_endpoint,
             "Record": {
+                "loan_amnt": str(self.cleaned_data['loan_amnt']),
+                "emp_title": self.cleaned_data['emp_title'],
+                "emp_length": self.cleaned_data['emp_length'],
+                "annual_inc": str(self.cleaned_data['annual_inc']),                
                 "home_ownership": self.cleaned_data['home_ownership'],
-                "int_rate": str(self.cleaned_data['int_rate']),
-                "grade": self.cleaned_data['grade'],
-                "mort_acc": str(self.cleaned_data['mort_acc'])
             }
         }
         response = requests.post(api_gateway_endpoint, data=json.dumps(payload))
